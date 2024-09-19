@@ -1,39 +1,47 @@
-import os
 import yt_dlp
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from ffmpeg import download_ffmpeg
 
-def download_video():
+def get_ydl_options(format_type, output_path):
+    return {
+        'outtmpl': f'{output_path}/%(title)s.%(ext)s',
+        'format': 'best[ext=mp4]' if format_type == 'video' else 'bestaudio/best',
+    }
+
+def download_content():
     url = url_entry.get()
     output_path = filedialog.askdirectory()
 
     if not url or not output_path:
-        messagebox.showerror("Erro", "URL ou pasta de destino não informada.")
+        messagebox.showerror("Error", "URL or destination directory not informed")
         return
 
-    ydl_opts = {
-        'outtmpl': f'{output_path}/%(title)s.%(ext)s',
-        'format': 'best[ext=mp4]',
-    }
-
     try:
+        ydl_opts = get_ydl_options(download_var.get(), output_path)
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-        messagebox.showinfo("Sucesso", "Vídeo baixado com sucesso!")
+        messagebox.showinfo("Success", f"{download_var.get().capitalize()} successfully downloaded!")
+    except yt_dlp.DownloadError as e:
+        messagebox.showerror("Download Error", f"Failed to download: {e}")
     except Exception as e:
-        messagebox.showerror("Erro", f"Falha ao baixar o vídeo: {e}")
+        messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
 app = tk.Tk()
 app.title("Video Downloader")
-app.geometry("400x150")
+app.geometry("400x200")
 
-url_label = tk.Label(app, text="URL do vídeo:")
+url_label = tk.Label(app, text="Video URL:")
 url_label.pack(pady=5)
 url_entry = tk.Entry(app, width=50)
 url_entry.pack(pady=5)
 
-download_button = tk.Button(app, text="Baixar Vídeo", command=download_video)
+download_var = tk.StringVar(value="video")
+video_radio = tk.Radiobutton(app, text="Download Video", variable=download_var, value="video")
+video_radio.pack(pady=5)
+audio_radio = tk.Radiobutton(app, text="Download Audio", variable=download_var, value="audio")
+audio_radio.pack(pady=5)
+
+download_button = tk.Button(app, text="Start Download", command=download_content)
 download_button.pack(pady=20)
 
 app.mainloop()
